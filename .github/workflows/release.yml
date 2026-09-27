@@ -1,0 +1,224 @@
+# Release pipeline for the public repository backupbase/recovery (MIT). In the private product
+# repository this file lives under recovery/ and never runs: GitHub only runs workflows from the
+# repository root's .github/workflows, and every job also checks the repository name.
+#
+# On a tag v<version> (for example v1.0.0) it:
+#   1. checks that the tag matches the crate version in Cargo.toml,
+#   2. tests and builds backupbase-restore on each OS:
+#        macOS    universal (aarch64 + x86_64, joined with lipo)  backupbase-restore-<version>-macos
+#        Windows  x86_64, MSVC, static CRT (no VC++ runtime)      backupbase-restore-<version>-windows.exe
+#        Linux    x86_64, musl, fully static                      backupbase-restore-<version>-linux
+#   3. attests each binary's build provenance (Sigstore, visible with `gh attestation verify`),
+#   4. writes SHA256SUMS and publishes the GitHub release with all files at once (the repository
+#      has immutable releases: the release is created as a draft, filled, then published).
+#
+# Expects: a Cargo.lock in the repository (builds use --locked) and `backupbase-restore --version`
+# printing the version.
+
+name: release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions: {}
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  CARGO_TERM_COLOR: always
+  BIN: backupbase-restore
+
+jobs:
+  version:
+    if: github.repository == 'backupbase/recovery'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    outputs:
+      version: ${{ steps.v.outputs.version }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - id: v
+        name: Tag matches Cargo.toml
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          crate="$(cargo metadata --no-deps --format-version 1 | jq -r --arg n "$BIN" '.packages[] | select(.name == $n) | .version')"
+          echo "tag $tag, crate $crate"
+          if [ -z "$crate" ] || [ "$tag" != "$crate" ]; then
+            echo "::error::tag v$tag does not match the $BIN version in Cargo.toml ($crate)"
+            exit 1
+          fi
+          echo "version=$tag" >> "$GITHUB_OUTPUT"
+
+  build:
+    needs: version
+    if: github.repository == 'backupbase/recovery'
+    name: build (${{ matrix.os }})
+    runs-on: ${{ matrix.runner }}
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+          - os: macos
+            runner: macos-15
+          - os: windows
+            runner: windows-2025
+          - os: linux
+            runner: ubuntu-24.04
+    env:
+      VERSION: ${{ needs.version.outputs.version }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Rust toolchain
+        run: |
+          rustup toolchain install stable --profile minimal
+          rustup default stable
+          case "${{ matrix.os }}" in
+            macos)   rustup target add aarch64-apple-darwin x86_64-apple-darwin ;;
+            windows) rustup target add x86_64-pc-windows-msvc ;;
+            linux)   rustup target add x86_64-unknown-linux-musl
+                     sudo apt-get update -q && sudo apt-get install -y -q musl-tools ;;
+          esac
+          rustc --version && cargo --version
+
+      - name: Test
+        run: cargo test --release --locked
+
+      - name: Build (macOS universal)
+        if: matrix.os == 'macos'
+        env:
+          MACOSX_DEPLOYMENT_TARGET: '11.0'
+        run: |
+          cargo build --release --locked --target aarch64-apple-darwin
+          cargo build --release --locked --target x86_64-apple-darwin
+          mkdir -p dist
+          out="dist/$BIN-$VERSION-macos"
+          lipo -create -output "$out" \
+            "target/aarch64-apple-darwin/release/$BIN" \
+            "target/x86_64-apple-darwin/release/$BIN"
+          lipo "$out" -verify_arch arm64 x86_64
+          lipo -info "$out"
+
+      - name: Build (Windows x86_64, static CRT)
+        if: matrix.os == 'windows'
+        env:
+          RUSTFLAGS: -Ctarget-feature=+crt-static
+        run: |
+          cargo build --release --locked --target x86_64-pc-windows-msvc
+          mkdir -p dist
+          cp "target/x86_64-pc-windows-msvc/release/$BIN.exe" "dist/$BIN-$VERSION-windows.exe"
+          # A static CRT leaves no import of the VC++ runtime DLLs.
+          if grep -a -i -q -E 'vcruntime140|msvcp140|api-ms-win-crt' "dist/$BIN-$VERSION-windows.exe"; then
+            echo "::error::the Windows binary still imports the dynamic C runtime"
+            exit 1
+          fi
+
+      - name: Build (Linux x86_64, static musl)
+        if: matrix.os == 'linux'
+        env:
+          CC_x86_64_unknown_linux_musl: musl-gcc
+        run: |
+          cargo build --release --locked --target x86_64-unknown-linux-musl
+          mkdir -p dist
+          cp "target/x86_64-unknown-linux-musl/release/$BIN" "dist/$BIN-$VERSION-linux"
+          file "dist/$BIN-$VERSION-linux"
+          if ! file "dist/$BIN-$VERSION-linux" | grep -q -E 'statically linked|static-pie linked'; then
+            echo "::error::the Linux binary is not static"
+            exit 1
+          fi
+
+      - name: Smoke test
+        run: |
+          f="$(ls dist/$BIN-$VERSION-*)"
+          chmod +x "$f"
+          "$f" --version | tee version.txt
+          grep -q -F "$VERSION" version.txt
+
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-path: dist/${{ env.BIN }}-${{ env.VERSION }}-*
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: ${{ env.BIN }}-${{ matrix.os }}
+          path: dist/
+          if-no-files-found: error
+          retention-days: 7
+
+  release:
+    needs: [version, build]
+    if: github.repository == 'backupbase/recovery'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    env:
+      VERSION: ${{ needs.version.outputs.version }}
+    steps:
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          pattern: ${{ env.BIN }}-*
+          path: dist
+          merge-multiple: true
+
+      - name: SHA256SUMS
+        working-directory: dist
+        run: |
+          ls -l
+          test "$(ls | wc -l)" -eq 3
+          sha256sum "$BIN-$VERSION-"* > SHA256SUMS
+          cat SHA256SUMS
+
+      - name: Release notes
+        run: |
+          {
+            echo "backupbase-restore $VERSION: restores Backup Base backups (vault format 1 and 2) without the app."
+            echo
+            echo "| File | For |"
+            echo "|---|---|"
+            echo "| \`$BIN-$VERSION-macos\` | macOS 11 or later, Apple silicon and Intel |"
+            echo "| \`$BIN-$VERSION-windows.exe\` | Windows 10 and 11, x64 |"
+            echo "| \`$BIN-$VERSION-linux\` | Linux x86_64 (static, any distribution) |"
+            echo
+            echo "Check a download:"
+            echo
+            echo '```'
+            echo "sha256sum -c SHA256SUMS --ignore-missing          # Linux"
+            echo "shasum -a 256 -c SHA256SUMS --ignore-missing      # macOS"
+            echo "Get-FileHash .\\$BIN-$VERSION-windows.exe         # Windows, compare with SHA256SUMS"
+            echo "gh attestation verify <file> --repo $GITHUB_REPOSITORY   # built by this workflow from this tag"
+            echo '```'
+            echo
+            echo "SHA256SUMS:"
+            echo
+            echo '```'
+            cat dist/SHA256SUMS
+            echo '```'
+          } > notes.md
+
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" dist/* \
+            --repo "$GITHUB_REPOSITORY" --verify-tag --draft \
+            --title "backupbase-restore $VERSION" --notes-file notes.md
+          gh release edit "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --draft=false
+          gh release view "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --json tagName,isDraft,isImmutable,assets \
+            --jq '"\(.tagName) draft=\(.isDraft) immutable=\(.isImmutable)", (.assets[] | "  \(.name) \(.size)")' \
+            || gh release view "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY"

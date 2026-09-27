@@ -1,0 +1,202 @@
+{
+  "backup": "Fixture v1",
+  "entries": [
+    {
+      "kind": "folder",
+      "mode": 493,
+      "mtime_ms": 1790483598093,
+      "path": "Documents"
+    },
+    {
+      "kind": "file",
+      "mode": 420,
+      "mtime_ms": 1767261854138,
+      "path": "Documents/Q&A: notes?.txt",
+      "sha256": "4fa621102a617ae78e71a4f65664ae0ee0aaf865c02a01519801641039f52213",
+      "size": 46
+    },
+    {
+      "kind": "file",
+      "mode": 420,
+      "mtime_ms": 1767261846361,
+      "path": "Documents/Résumé ✓.txt",
+      "sha256": "f682a5ef26796a5f98678d3a028d07c8853e6c5fc01005b55bd95852d00fc917",
+      "size": 13
+    },
+    {
+      "kind": "file",
+      "mode": 420,
+      "mtime_ms": 1767351845252,
+      "path": "Documents/added in version 2.txt",
+      "sha256": "3428719b7688c78a0cc8ba4b9e80b4e464c815fbccfd4b20695a15ffcefc22af",
+      "size": 6
+    },
+    {
+      "kind": "file",
+      "mode": 420,
+      "mtime_ms": 1767261855249,
+      "path": "Documents/aux.txt",
+      "sha256": "3a653dcb32e1213173f497e406595ac3c02122de4a2716faa2479a950f3816ac",
+      "size": 24
+    },
+    {
+      "kind": "folder",
+      "mode": 493,
+      "mtime_ms": 1790483597855,
+      "path": "Documents/empty folder"
+    },
+    {
+      "kind": "file",
+      "mode": 420,
+      "mtime_ms": 1767351845251,
+      "path": "Documents/hello.txt",
+      "sha256": "7497ab13409fa80c4e352182603182b651f19be6924857c74f5fcc6b9ebad9cc",
+      "size": 34
+    },
+    {
+      "kind": "folder",
+      "mode": 493,
+      "mtime_ms": 1790483597838,
+      "path": "Documents/level-00-abcdefghijklmnopqrstu"
+    },
+    {
+      "kind": "folder",
+      "mode": 493,
+      "mtime_ms": 1790483597838,
+      "path": "Documents/level-00-abcdefghijklmnopqrstu/level-01-abcdefghijklmnopqrstu"
+    },
+    {
+      "kind": "folder",
+      "mode": 493,
+      "mtime_ms": 1790483597838,
+      "path": "Documents/level-00-abcdefghijklmnopqrstu/level-01-abcdefghijklmnopqrstu/level-02-abcdefghijklmnopqrstu"
+    },
+    {
+      "kind": "folder",
+      "mode": 493,
+      "mtime_ms": 1790483597838,
+      "path": "Documents/level-00-abcdefghijklmnopqrstu/level-01-abcdefghijklmnopqrstu/level-02-abcdefghijklmnopqrstu/level-03-abcdefghijklmnopqrstu"
+    },
+    {
+      "kind": "folder",
+      "mode": 493,
+      "mtime_ms": 1790483597839,
+      "path": "Documents/level-00-abcdefghijklmnopqrstu/level-01-abcdefghijklmnopqrstu/level-02-abcdefghijklmnopqrstu/level-03-abcdefghijklmnopqrstu/level-04-abcdefghijklmnopqrstu"
+    },
+    {
+      "kind": "folder",
+      "mode": 493,
+      "mtime_ms": 1790483597839,
+      "path": "Documents/level-00-abcdefghijklmnopqrstu/level-01-abcdefghijklmnopqrstu/level-02-abcdefghijklmnopqrstu/level-03-abcdefghijklmnopqrstu/level-04-abcdefghijklmnopqrstu/level-05-abcdefghijklmnopqrstu"
+    },
+    {
+      "kind": "folder",
+      "mode": 493,
+      "mtime_ms": 1790483597839,
+      "path": "Documents/level-00-abcdefghijklmnopqrstu/level-01-abcdefghijklmnopqrstu/level-02-abcdefghijklmnopqrstu/level-03-abcdefghijklmnopqrstu/level-04-abcdefghijklmnopqrstu/level-05-abcdefghijklmnopqrstu/level-06-abcdefghijklmnopqrstu"
+    },
+    {
+      "kind": "folder",
+      "mode": 493,
+      "mtime_ms": 1790483597839,
+      "path": "Documents/level-00-abcdefghijklmnopqrstu/level-01-abcdefghijklmnopqrstu/level-02-abcdefghijklmnopqrstu/level-03-abcdefghijklmnopqrstu/level-04-abcdefghijklmnopqrstu/level-05-abcdefghijklmnopqrstu/level-06-abcdefghijklmnopqrstu/level-07-abcdefghijklmnopqrstu"
+    },
+    {
+      "kind": "folder",
+      "mode": 493,
+      "mtime_ms": 1790483597839,
+      "path": "Documents/level-00-abcdefghijklmnopqrstu/level-01-abcdefghijklmnopqrstu/level-02-abcdefghijklmnopqrstu/level-03-abcdefghijklmnopqrstu/level-04-abcdefghijklmnopqrstu/level-05-abcdefghijklmnopqrstu/level-06-abcdefghijklmnopqrstu/level-07-abcdefghijklmnopqrstu/level-08-abcdefghijklmnopqrstu"
+    },
+    {
+      "kind": "folder",
+      "mode": 493,
+      "mtime_ms": 1790483597839,
+      "path": "Documents/level-00-abcdefghijklmnopqrstu/level-01-abcdefghijklmnopqrstu/level-02-abcdefghijklmnopqrstu/level-03-abcdefghijklmnopqrstu/level-04-abcdefghijklmnopqrstu/level-05-abcdefghijklmnopqrstu/level-06-abcdefghijklmnopqrstu/level-07-abcdefghijklmnopqrstu/level-08-abcdefghijklmnopqrstu/level-09-abcdefghijklmnopqrstu"
+    },
+    {
+      "kind": "folder",
+      "mode": 493,
+      "mtime_ms": 1790483597839,
+      "path": "Documents/level-00-abcdefghijklmnopqrstu/level-01-abcdefghijklmnopqrstu/level-02-abcdefghijklmnopqrstu/level-03-abcdefghijklmnopqrstu/level-04-abcdefghijklmnopqrstu/level-05-abcdefghijklmnopqrstu/level-06-abcdefghijklmnopqrstu/level-07-abcdefghijklmnopqrstu/level-08-abcdefghijklmnopqrstu/level-09-abcdefghijklmnopqrstu/level-10-abcdefghijklmnopqrstu"
+    },
+    {
+      "kind": "folder",
+      "mode": 493,
+      "mtime_ms": 1790483597839,
+      "path": "Documents/level-00-abcdefghijklmnopqrstu/level-01-abcdefghijklmnopqrstu/level-02-abcdefghijklmnopqrstu/level-03-abcdefghijklmnopqrstu/level-04-abcdefghijklmnopqrstu/level-05-abcdefghijklmnopqrstu/level-06-abcdefghijklmnopqrstu/level-07-abcdefghijklmnopqrstu/level-08-abcdefghijklmnopqrstu/level-09-abcdefghijklmnopqrstu/level-10-abcdefghijklmnopqrstu/level-11-abcdefghijklmnopqrstu"
+    },
+    {
+      "kind": "file",
+      "mode": 420,
+      "mtime_ms": 1767261853027,
+      "path": "Documents/level-00-abcdefghijklmnopqrstu/level-01-abcdefghijklmnopqrstu/level-02-abcdefghijklmnopqrstu/level-03-abcdefghijklmnopqrstu/level-04-abcdefghijklmnopqrstu/level-05-abcdefghijklmnopqrstu/level-06-abcdefghijklmnopqrstu/level-07-abcdefghijklmnopqrstu/level-08-abcdefghijklmnopqrstu/level-09-abcdefghijklmnopqrstu/level-10-abcdefghijklmnopqrstu/level-11-abcdefghijklmnopqrstu/deep-file.txt",
+      "sha256": "30913227f62d042c13b95fb238436b5eb9d9f07c0a74f33a7fd56638128552f7",
+      "size": 48
+    },
+    {
+      "kind": "folder",
+      "mode": 493,
+      "mtime_ms": 1790483597855,
+      "path": "Documents/links"
+    },
+    {
+      "kind": "link",
+      "mtime_ms": 1790483597855,
+      "path": "Documents/links/outside",
+      "target": "/etc/hosts"
+    },
+    {
+      "kind": "link",
+      "mtime_ms": 1790483597855,
+      "path": "Documents/links/to-hello",
+      "target": "../hello.txt"
+    },
+    {
+      "kind": "folder",
+      "mode": 493,
+      "mtime_ms": 1790483597832,
+      "path": "Documents/modes"
+    },
+    {
+      "kind": "file",
+      "mode": 292,
+      "mtime_ms": 1767261850805,
+      "path": "Documents/modes/read-only.txt",
+      "sha256": "28dc50ce2c559549546af000e2a606f45a45dac10f91bcefc7b21b9555ca1334",
+      "size": 10
+    },
+    {
+      "kind": "file",
+      "mode": 493,
+      "mtime_ms": 1767261851916,
+      "path": "Documents/modes/run.sh",
+      "sha256": "299001868fb8c02fd431c336c6d058f5558c5dff5b5af5e6fe04b870a6a9cbba",
+      "size": 18
+    },
+    {
+      "kind": "file",
+      "mode": 420,
+      "mtime_ms": 1767261848583,
+      "path": "Documents/zero.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size": 0
+    },
+    {
+      "kind": "folder",
+      "mode": 493,
+      "mtime_ms": 1790483598094,
+      "path": "Documents/日本語"
+    },
+    {
+      "kind": "file",
+      "mode": 420,
+      "mtime_ms": 1767261847472,
+      "path": "Documents/日本語/メモ (renamed).txt",
+      "sha256": "5a3de531efc9df57994b60b3f4f1799281b342871872539fd30ab27f04e11e2f",
+      "size": 7
+    }
+  ],
+  "made_by": "bb_core (Backup Base 1.1.0 engine) on macOS",
+  "note": "Paths are relative to the restore folder. Links that point outside it (links/outside) are never created; on Windows no links are created, names with characters Windows does not allow get _ and reserved names (aux.txt) are refused.",
+  "version_id": "20260921T110000Z-dc967a9a"
+}

@@ -1,0 +1,52 @@
+HOW TO GET YOUR FILES BACK
+==========================
+
+This folder holds encrypted backups made by Backup Base (https://backupbase.org).
+Everything inside is sealed with the passcode chosen when the backup was set up.
+File contents and file names are encrypted, so nothing here can be opened
+directly. The names of the backups listed below, when each version was saved and
+how large it is can be seen by anyone who can open this folder.
+
+Backups in this folder:
+
+  - Recovery Fixture
+
+Each backup folder keeps its versions in a folder named archives. Every
+backup run that found changes saved one encrypted archive there (a .bba
+file holding every file that run could read) and a small encrypted index
+next to it (a .bbs file with the same name) that lists what the archive
+holds. A file that was locked during a run, or a folder that could not
+be read, is not in that run's archive; a copy saved earlier stays in an
+older archive. A file your cloud app kept online-only (in the cloud, not
+on the computer) was not downloaded to be backed up.
+
+RESTORE ON THIS COMPUTER
+------------------------
+
+1. Open Backup Base and click Restore.
+2. Choose the backup, pick a date, and tick the files and folders you want.
+3. Restore them to where they were, or to a folder you choose.
+
+RESTORE ON A NEW OR DIFFERENT COMPUTER
+--------------------------------------
+
+1. Install Backup Base from https://backupbase.org/download
+   (free for personal use).
+2. Let this folder finish syncing to the new computer (OneDrive, SharePoint,
+   Google Drive or whichever service holds it).
+3. In Backup Base, click Restore, then "Open a backup from another computer".
+4. Pick this folder and enter the passcode for the backup.
+
+GOOD TO KNOW
+------------
+
+- You need the passcode. Nobody can open these backups without it, including
+  Backup Base, and it cannot be reset.
+- Do not rename, move or edit anything inside the backup folders. Changing
+  them can make a backup impossible to restore.
+- Try a restore now and then, so you know your backups work.
+
+Questions: team@backupbase.org
+
+Backup Base 1.1.0 keeps this file up to date.
+Last updated 2026-09-27 03:24 UTC.

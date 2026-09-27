@@ -1,0 +1,43 @@
+HOW TO GET YOUR FILES BACK
+==========================
+
+This folder holds encrypted backups made by Backup Base (https://backupbase.org).
+Every file inside is sealed with the passcode chosen when the backup was set up.
+File contents and file names are encrypted, so nothing here can be opened
+directly. The names of the backups listed below, how many files they hold and
+their approximate sizes can be seen by anyone who can open this folder.
+
+Backups in this folder:
+
+  - Recovery Fixture
+
+RESTORE ON THIS COMPUTER
+------------------------
+
+1. Open Backup Base and click Restore.
+2. Choose the backup, pick a date, and tick the files and folders you want.
+3. Restore them to where they were, or to a folder you choose.
+
+RESTORE ON A NEW OR DIFFERENT COMPUTER
+--------------------------------------
+
+1. Install Backup Base from https://backupbase.org/download
+   (free for personal use).
+2. Let this folder finish syncing to the new computer (OneDrive, SharePoint,
+   Google Drive or whichever service holds it).
+3. In Backup Base, click Restore, then "Open a backup from another computer".
+4. Pick this folder and enter the passcode for the backup.
+
+GOOD TO KNOW
+------------
+
+- You need the passcode. Nobody can open these backups without it, including
+  Backup Base, and it cannot be reset.
+- Do not rename, move or edit anything inside the backup folders. Changing
+  them can make a backup impossible to restore.
+- Try a restore now and then, so you know your backups work.
+
+Questions: team@backupbase.org
+
+Backup Base 1.0.2 keeps this file up to date.
+Last updated 2026-09-27 03:20 UTC.

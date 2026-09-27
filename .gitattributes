@@ -1,0 +1,5 @@
+# Sample backups and test vectors must stay byte for byte as they were made.
+fixtures/** -text
+tests/fixtures/** -text
+# The release key must match the copy on backupbase.org byte for byte.
+backupbase-release.pub -text
