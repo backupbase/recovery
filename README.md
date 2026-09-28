@@ -15,7 +15,9 @@ This tool is for everything else: a computer where the app is not installed or c
 
 It has no network code: it never connects to anything, and it never changes the backup folder.
 
-It is written from the published format specification ([FORMAT.md](FORMAT.md)) alone and shares no code with the app, so it is a second, independent implementation of the format.
+It is a separate implementation, written by the Backup Base developers from the published format specification ([FORMAT.md](FORMAT.md)) and sharing no source code with the app. Anyone can write another one from the same specification.
+
+Keep a copy with your backups. We do not delete recovery releases, but recovery should not depend on GitHub either: save the binary for your computer, `SHA256SUMS` and `FORMAT.md` next to your backup folder (in your cloud storage), so everything needed to restore is in one place.
 
 ## Download and check it
 
@@ -27,7 +29,7 @@ Download the file for your computer, and `SHA256SUMS`, from the Releases page of
 | Windows 10 and 11 (64-bit) | `backupbase-restore-<version>-windows.exe` |
 | Linux (x86-64, static, any distribution) | `backupbase-restore-<version>-linux` |
 
-Each file is the program itself: there is nothing to unzip or install. The steps below use version 0.1.1 in your Downloads folder; use the version you downloaded.
+Each file is the program itself: there is nothing to unzip or install. The steps below use version 0.1.2 in your Downloads folder; use the version you downloaded.
 
 ### 1. Check the download
 
@@ -48,24 +50,24 @@ sha256sum -c SHA256SUMS --ignore-missing
 ```powershell
 # Windows PowerShell: prints True when the file matches
 cd $HOME\Downloads
-$f = "backupbase-restore-0.1.1-windows.exe"
+$f = "backupbase-restore-0.1.2-windows.exe"
 (Get-FileHash $f -Algorithm SHA256).Hash -eq (Select-String -SimpleMatch $f SHA256SUMS).Line.Split(" ")[0]
 ```
 
 ```bat
 :: Windows Command Prompt: compare the result with the line for this file in SHA256SUMS
 cd %USERPROFILE%\Downloads
-certutil -hashfile backupbase-restore-0.1.1-windows.exe SHA256
+certutil -hashfile backupbase-restore-0.1.2-windows.exe SHA256
 findstr windows SHA256SUMS
 ```
 
 Releases are built from this repository's source by GitHub Actions, and GitHub signs a build provenance attestation for every file. With the [GitHub CLI](https://cli.github.com) you can check that a file was built from this repository and not changed since:
 
 ```sh
-gh attestation verify backupbase-restore-0.1.1-macos --repo backupbase/recovery
+gh attestation verify backupbase-restore-0.1.2-macos --repo backupbase/recovery
 ```
 
-(Use the name of the file you downloaded.) Releases are published as immutable releases: once published, their files and tag cannot be changed or replaced, and `gh release verify-asset v0.1.1 backupbase-restore-0.1.1-macos --repo backupbase/recovery` confirms that a file belongs to that release.
+(Use the name of the file you downloaded.) Releases are published as immutable releases: once published, their files and tag cannot be changed or replaced, and `gh release verify-asset v0.1.2 backupbase-restore-0.1.2-macos --repo backupbase/recovery` confirms that a file belongs to that release.
 
 ### 2. Make it runnable
 
@@ -75,7 +77,7 @@ The files are not signed with an Apple or Microsoft certificate, so the system m
 
   ```sh
   cd ~/Downloads
-  mv backupbase-restore-0.1.1-macos backupbase-restore
+  mv backupbase-restore-0.1.2-macos backupbase-restore
   chmod +x backupbase-restore
   xattr -d com.apple.quarantine backupbase-restore
   ```
@@ -85,7 +87,7 @@ The files are not signed with an Apple or Microsoft certificate, so the system m
 
   ```powershell
   cd $HOME\Downloads
-  Rename-Item backupbase-restore-0.1.1-windows.exe backupbase-restore.exe
+  Rename-Item backupbase-restore-0.1.2-windows.exe backupbase-restore.exe
   Unblock-File .\backupbase-restore.exe
   ```
 
@@ -94,7 +96,7 @@ The files are not signed with an Apple or Microsoft certificate, so the system m
 
   ```sh
   cd ~/Downloads
-  mv backupbase-restore-0.1.1-linux backupbase-restore
+  mv backupbase-restore-0.1.2-linux backupbase-restore
   chmod +x backupbase-restore
   ```
 

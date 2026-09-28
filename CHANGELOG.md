@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.2 (2026-09-28)
+
+Documentation only, no code changes: the README says precisely who wrote this implementation, and suggests keeping a copy of the tool, `SHA256SUMS` and `FORMAT.md` next to your backups.
+
 ## 0.1.1 (2026-09-27)
 
 First release. (0.1.0 was published for about an hour and withdrawn; 0.1.1 has the same code.)
