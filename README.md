@@ -29,7 +29,7 @@ Download the file for your computer, and `SHA256SUMS`, from the Releases page of
 | Windows 10 and 11 (64-bit) | `backupbase-restore-<version>-windows.exe` |
 | Linux (x86-64, static, any distribution) | `backupbase-restore-<version>-linux` |
 
-Each file is the program itself: there is nothing to unzip or install. The steps below use version 0.1.2 in your Downloads folder; use the version you downloaded.
+Each file is the program itself: there is nothing to unzip or install. The steps below use version 0.1.3 in your Downloads folder; use the version you downloaded.
 
 ### 1. Check the download
 
@@ -50,24 +50,24 @@ sha256sum -c SHA256SUMS --ignore-missing
 ```powershell
 # Windows PowerShell: prints True when the file matches
 cd $HOME\Downloads
-$f = "backupbase-restore-0.1.2-windows.exe"
+$f = "backupbase-restore-0.1.3-windows.exe"
 (Get-FileHash $f -Algorithm SHA256).Hash -eq (Select-String -SimpleMatch $f SHA256SUMS).Line.Split(" ")[0]
 ```
 
 ```bat
 :: Windows Command Prompt: compare the result with the line for this file in SHA256SUMS
 cd %USERPROFILE%\Downloads
-certutil -hashfile backupbase-restore-0.1.2-windows.exe SHA256
+certutil -hashfile backupbase-restore-0.1.3-windows.exe SHA256
 findstr windows SHA256SUMS
 ```
 
 Releases are built from this repository's source by GitHub Actions, and GitHub signs a build provenance attestation for every file. With the [GitHub CLI](https://cli.github.com) you can check that a file was built from this repository and not changed since:
 
 ```sh
-gh attestation verify backupbase-restore-0.1.2-macos --repo backupbase/recovery
+gh attestation verify backupbase-restore-0.1.3-macos --repo backupbase/recovery
 ```
 
-(Use the name of the file you downloaded.) Releases are published as immutable releases: once published, their files and tag cannot be changed or replaced, and `gh release verify-asset v0.1.2 backupbase-restore-0.1.2-macos --repo backupbase/recovery` confirms that a file belongs to that release.
+(Use the name of the file you downloaded.) Releases are published as immutable releases: once published, their files and tag cannot be changed or replaced, and `gh release verify-asset v0.1.3 backupbase-restore-0.1.3-macos --repo backupbase/recovery` confirms that a file belongs to that release.
 
 ### 2. Make it runnable
 
@@ -77,7 +77,7 @@ The files are not signed with an Apple or Microsoft certificate, so the system m
 
   ```sh
   cd ~/Downloads
-  mv backupbase-restore-0.1.2-macos backupbase-restore
+  mv backupbase-restore-0.1.3-macos backupbase-restore
   chmod +x backupbase-restore
   xattr -d com.apple.quarantine backupbase-restore
   ```
@@ -87,7 +87,7 @@ The files are not signed with an Apple or Microsoft certificate, so the system m
 
   ```powershell
   cd $HOME\Downloads
-  Rename-Item backupbase-restore-0.1.2-windows.exe backupbase-restore.exe
+  Rename-Item backupbase-restore-0.1.3-windows.exe backupbase-restore.exe
   Unblock-File .\backupbase-restore.exe
   ```
 
@@ -96,7 +96,7 @@ The files are not signed with an Apple or Microsoft certificate, so the system m
 
   ```sh
   cd ~/Downloads
-  mv backupbase-restore-0.1.2-linux backupbase-restore
+  mv backupbase-restore-0.1.3-linux backupbase-restore
   chmod +x backupbase-restore
   ```
 
@@ -177,9 +177,9 @@ Symbolic links that are not created (because they point outside the target folde
 ## What a restore does
 
 - **It never overwrites anything.** The target folder must be new or empty, unless you add `--keep-both`: then existing files stay, a file that already has exactly the restored content is left alone, and other restored files are saved as `name (restored).ext`.
-- Files go to `<target>/<backed-up folder name>/...`, for example `~/Restored/Documents/Contracts/nda.pdf`.
+- Files go to `<target>/<backed-up folder name>/...`, for example `~/Restored/Documents/Contracts/nda.pdf`. The folder name is the last part of the folder's original path, so `~/.ssh` comes back as `.ssh`.
 - Every file is checked against the SHA-256 recorded when it was backed up before it gets its name, so a restored file is exactly the file that was backed up, or it is not restored and is listed.
-- Files get their modification time and read-only setting back, and on macOS and Linux their permissions (setuid, setgid and sticky bits are never restored). Folders get their time and permissions last.
+- Files get their modification time and read-only setting back, and on macOS and Linux their permissions (setuid, setgid and sticky bits are never restored). Folders get their time and permissions last, and on Windows their hidden setting.
 - Symbolic links are created last, and only when they point inside the target folder: a link target may use `..` only at its start, and may not go through a link that was already there. On Windows they are skipped with a note (creating them needs administrator rights or developer mode).
 - Paths that are not safe (absolute paths, `..`, empty names) are refused and listed. On Windows, characters Windows does not allow in names (`< > : " | ? *` and `\`) become `_`, a trailing dot or space becomes `_`, and reserved names (CON, PRN, AUX, NUL, COM0 to COM9, LPT0 to LPT9, with or without an extension) are refused; each change is listed.
 - Files a version lists without content (the app could not read them when that backup ran, for example a locked or online-only file) cannot be restored from that version. They are listed; an older version may hold them. A copy marked as possibly incomplete (the file changed while it was being read) is restored and listed.

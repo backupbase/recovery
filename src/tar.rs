@@ -39,10 +39,7 @@ fn field(b: &[u8]) -> &[u8] {
 
 fn octal(b: &[u8]) -> Option<u64> {
     let s = field(b);
-    let s = match s.iter().position(|&c| c != b' ') {
-        Some(i) => &s[i..],
-        None => return None,
-    };
+    let s = &s[s.iter().position(|&c| c != b' ')?..];
     let end = s.iter().position(|&c| c == b' ').unwrap_or(s.len());
     if end == 0 || s[end..].iter().any(|&c| c != b' ') {
         return None;

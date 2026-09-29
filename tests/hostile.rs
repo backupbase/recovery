@@ -438,6 +438,55 @@ fn two_roots_with_the_same_name() {
 }
 
 #[test]
+fn root_folders_come_from_the_original_path() {
+    // Names as Backup Base 1.1.3 recorded them: the leading dot dropped, ".claude" made
+    // unique against "claude". The folders take the path's last component, from either OS.
+    let c = case(1);
+    let (h1, b1) = c.vault.write_blob(b"ssh");
+    let (h2, b2) = c.vault.write_blob(b"plain");
+    let (h3, b3) = c.vault.write_blob(b"dot");
+    let v = json!({"v":1,"snapshot_id":ID1,"roots":[{"id":0,"path":"/Users/a/.ssh","name":"ssh"},{"id":1,"path":"C:\\Users\\a\\claude","name":"claude"},{"id":2,"path":"/Users/a/.claude","name":"claude (2)"}],
+        "entries":[{"r":0,"p":"","k":"d"},{"r":0,"p":"config","k":"f","s":3,"h":h1,"b":b1},{"r":1,"p":"","k":"d"},{"r":1,"p":"f.txt","k":"f","s":5,"h":h2,"b":b2},{"r":2,"p":"","k":"d"},{"r":2,"p":"f.txt","k":"f","s":3,"h":h3,"b":b3}]});
+    c.vault.write_index(ID1, &v, true);
+    let to = c.root.join("out");
+    let o = run(&["restore", s(&c.vault.dir), "--to", s(&to)]);
+    assert!(o.status.success(), "{}", stdout(&o));
+    assert_eq!(tree(&to), vec![".claude", ".claude/f.txt", ".ssh", ".ssh/config", "claude", "claude/f.txt"]);
+    assert_eq!(fs::read(to.join(".claude/f.txt")).unwrap(), b"dot");
+    let l = run(&["files", s(&c.vault.dir)]);
+    assert!(stdout(&l).contains(" .ssh/config\n") && stdout(&l).contains(" .claude/f.txt\n"), "{}", stdout(&l));
+    // --path takes the new names, and the recorded ones when nothing else matches.
+    for (p, want) in [(".ssh/config", ".ssh/config"), ("ssh/config", ".ssh/config"), ("claude (2)", ".claude/f.txt"), ("claude", "claude/f.txt")] {
+        let to = c.root.join("by-path").join(p.replace('/', "_"));
+        let o = run(&["restore", s(&c.vault.dir), "--to", s(&to), "--path", p]);
+        assert!(o.status.success(), "{p}: {}{}", stdout(&o), stderr(&o));
+        let files: Vec<String> = tree(&to).into_iter().filter(|x| x.ends_with("f.txt") || x.ends_with("config")).collect();
+        assert_eq!(files, vec![want.to_string()], "{p}");
+    }
+}
+
+#[cfg(windows)]
+#[test]
+fn hidden_folders_stay_hidden_on_windows() {
+    // A dot folder backed up on Windows is usually hidden too (attr bit 2): the restored root
+    // folder and a hidden folder inside it are hidden again, a plain folder is not.
+    use std::os::windows::fs::MetadataExt;
+    let c = case(1);
+    let (h1, b1) = c.vault.write_blob(b"key");
+    let v = json!({"v":1,"snapshot_id":ID1,"roots":[{"id":0,"path":"C:\\Users\\a\\.ssh","name":".ssh"}],
+        "entries":[{"r":0,"p":"","k":"d","attr":2},{"r":0,"p":"keys","k":"d","attr":2},{"r":0,"p":"plain","k":"d","attr":0},{"r":0,"p":"keys/id","k":"f","s":3,"h":h1,"b":b1}]});
+    c.vault.write_index(ID1, &v, true);
+    let to = c.root.join("out");
+    let o = run(&["restore", s(&c.vault.dir), "--to", s(&to)]);
+    assert!(o.status.success(), "{}{}", stdout(&o), stderr(&o));
+    let hidden = |p: &Path| fs::metadata(p).unwrap().file_attributes() & 2 != 0;
+    assert!(hidden(&to.join(".ssh")), "the root folder is not hidden");
+    assert!(hidden(&to.join(".ssh").join("keys")), "the hidden folder inside is not hidden");
+    assert!(!hidden(&to.join(".ssh").join("plain")), "a plain folder became hidden");
+    assert_eq!(fs::read(to.join(".ssh").join("keys").join("id")).unwrap(), b"key");
+}
+
+#[test]
 fn a_target_inside_any_backup_folder_is_refused() {
     let c = case(2);
     c.vault.v2_version(ID1, &[file("a.txt", b"a")]);

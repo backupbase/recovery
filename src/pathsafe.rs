@@ -11,6 +11,8 @@
 use std::borrow::Cow;
 use std::collections::{HashMap, HashSet};
 
+use unicode_normalization::UnicodeNormalization;
+
 use crate::vault::Root;
 
 pub const WINDOWS: bool = cfg!(windows);
@@ -81,20 +83,43 @@ pub fn fix_path(p: &str, windows: bool) -> Result<(Vec<String>, bool), &'static 
     Ok((out, changed))
 }
 
-/// The folder name each root gets in the target: its recorded name made safe, or
-/// `Folder <id>` when that is not usable, made unique (ignoring case).
+/// The last component of a root's original path. A path made on Windows (not starting with
+/// `/`) is split on `/` and `\`, so a backup made on either OS can be restored on the other;
+/// a macOS path only on `/`, since a macOS folder name may contain `\`. None for "/", a
+/// drive (`C:\`) or "".
+fn last_component(path: &str) -> Option<&str> {
+    let seps: &[char] = if path.starts_with('/') { &['/'] } else { &['/', '\\'] };
+    let last = path.rsplit(seps).find(|c| !c.is_empty())?;
+    let b = last.as_bytes();
+    (!(b.len() == 2 && b[1] == b':' && b[0].is_ascii_alphabetic())).then_some(last)
+}
+
+/// The folder name each root gets in the target (FORMAT.md "Restore", Chosen folder): the
+/// last component of its original path (leading dots kept: `.ssh`) made safe, or its
+/// recorded name (trimmed) when that is not usable, or `Folder <id+1>`; made unique ignoring
+/// case and Unicode form, in root id order, shortened so a suffix still fits in 255 bytes.
+/// Indexes written before Backup Base 1.1.4 may record a name without its leading dot
+/// (`.ssh` as `ssh`), which is why the path comes first.
 pub fn root_dirs(roots: &[Root], windows: bool) -> HashMap<u32, String> {
+    let mut sorted: Vec<&Root> = roots.iter().collect();
+    sorted.sort_by_key(|r| r.id);
     let mut used = HashSet::new();
     let mut out = HashMap::new();
-    for r in roots {
-        let base = match fix_component(r.name.trim(), windows) {
-            Ok(n) => n.into_owned(),
-            Err(_) => format!("Folder {}", r.id),
-        };
+    for r in sorted {
+        let base = last_component(&r.path)
+            .and_then(|c| fix_component(c, windows).ok())
+            .or_else(|| fix_component(r.name.trim(), windows).ok())
+            .map(Cow::into_owned)
+            .unwrap_or_else(|| format!("Folder {}", r.id as u64 + 1));
         let mut name = base.clone();
         let mut n = 2;
-        while !used.insert(name.to_lowercase()) {
-            name = format!("{base} ({n})");
+        while !used.insert(name.nfc().collect::<String>().to_lowercase()) {
+            let tag = format!(" ({n})");
+            let mut cut = base.len().min(255 - tag.len());
+            while !base.is_char_boundary(cut) {
+                cut -= 1;
+            }
+            name = format!("{}{tag}", &base[..cut]);
             n += 1;
         }
         out.insert(r.id, name);
@@ -243,7 +268,43 @@ mod tests {
         let m = root_dirs(&[r(0, "Documents"), r(1, "documents"), r(2, ".."), r(3, "Documents")], false);
         assert_eq!(m[&0], "Documents");
         assert_eq!(m[&1], "documents (2)");
-        assert_eq!(m[&2], "Folder 2");
+        assert_eq!(m[&2], "Folder 3");
         assert_eq!(m[&3], "Documents (3)");
+    }
+
+    #[test]
+    fn root_names_from_paths() {
+        let r = |id, path: &str, name: &str| Root { id, path: path.into(), name: name.into() };
+        let names = |roots: &[Root], w: bool| {
+            let m = root_dirs(roots, w);
+            (0..roots.len() as u32).map(|i| m[&i].clone()).collect::<Vec<_>>()
+        };
+        // The path's last component, leading dot kept, from either OS.
+        assert_eq!(names(&[r(0, "/Users/a/.ssh", ".ssh"), r(1, "C:\\Users\\a\\.ssh", ".ssh")], false), vec![".ssh", ".ssh (2)"]);
+        assert_eq!(names(&[r(0, "C:\\Users\\a\\.ssh\\", ".ssh")], true), vec![".ssh"]);
+        // Old indexes recorded "ssh" and "claude (2)": the path wins.
+        assert_eq!(names(&[r(0, "/Users/a/.ssh", "ssh"), r(1, "/Users/a/claude", "claude"), r(2, "/Users/a/.claude", "claude (2)")], false), vec![".ssh", "claude", ".claude"]);
+        // Duplicates across roots, ignoring case, in root id order (listed out of order here).
+        assert_eq!(names(&[r(1, "/b/documents", "documents (2)"), r(0, "/a/Documents", "Documents"), r(2, "D:\\DOCUMENTS", "DOCUMENTS (3)")], false), vec!["Documents", "documents (2)", "DOCUMENTS (3)"]);
+        // No usable path: the recorded name; neither: "Folder N".
+        assert_eq!(names(&[r(0, "", "Documents"), r(1, "/", "Backup"), r(2, "C:\\", "C")], false), vec!["Documents", "Backup", "C"]);
+        assert_eq!(names(&[r(0, "/", "../../.."), r(1, "", ""), r(2, "/x/..", "a/b")], false), vec!["Folder 1", "Folder 2", "Folder 3"]);
+        // Windows rules: replacements, reserved names refused (then the recorded name).
+        assert_eq!(names(&[r(0, "/Users/a/notes: q?", "notes q"), r(1, "/Users/a/CON", "CON")], true), vec!["notes_ q_", "Folder 2"]);
+        assert_eq!(names(&[r(0, "/Users/a/aux.d", "aux.d")], false), vec!["aux.d"]);
+        // Only the last trailing dot or space is replaced; a name of dots or a leading "X:" is
+        // kept (made safe) rather than refused. The recorded name is trimmed.
+        assert_eq!(names(&[r(0, "/a/Notes..", "Notes"), r(1, "/b/...", "Folder"), r(2, "/c/C:foo", "Cfoo")], true), vec!["Notes._", ".._", "C_foo"]);
+        assert_eq!(names(&[r(0, "/c/C:foo", "Cfoo"), r(1, "/", " Docs ")], false), vec!["C:foo", "Docs"]);
+        // A macOS name may hold "\"; a Windows path is split on it.
+        assert_eq!(names(&[r(0, "/Users/a/back\\slash", "backslash"), r(1, "D:\\x\\back", "back")], false), vec!["back\\slash", "back"]);
+        assert_eq!(names(&[r(0, "/Users/a/back\\slash", "backslash")], true), vec!["back_slash"]);
+        // Unique ignoring Unicode form (APFS treats both spellings of "café" as one name).
+        assert_eq!(names(&[r(0, "/a/caf\u{e9}", "caf\u{e9}"), r(1, "/b/cafe\u{301}", "cafe\u{301}")], false), vec!["caf\u{e9}", "cafe\u{301} (2)"]);
+        // A suffix still fits in 255 bytes, cut on a character boundary.
+        let long = "\u{e9}".repeat(127); // 254 bytes
+        let got = names(&[r(0, &format!("/a/{long}"), "a"), r(1, &format!("/b/{long}"), "b")], false);
+        assert_eq!(got[0], long);
+        assert!(got[1].len() <= 255 && got[1].ends_with(" (2)") && got[1].starts_with('\u{e9}'), "{}", got[1].len());
     }
 }

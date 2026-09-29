@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.3 (2026-09-29)
+
+- A backed-up folder whose name starts with a dot is restored under its own name: `~/.ssh` goes to `<target>/.ssh`, not `<target>/ssh`, and `~/.claude` backed up next to `~/claude` goes to `<target>/.claude`, not `<target>/claude (2)`. Backup Base 1.1.3 and earlier recorded these names without the dot, so the folder name now comes from the last part of the folder's original path (made on macOS or Windows alike), and from the recorded name only when the path gives no usable one. `files` shows the same names.
+- `--path` takes these names. A `--path` that matches nothing is also tried with the recorded names, so `--path ssh/config` still works for a backup made before Backup Base 1.1.4 when no backed-up folder now has the name `ssh` (a folder now named `ssh`, such as `~/ssh`, wins).
+- A macOS folder whose name contains `\` keeps it (only a path made on Windows is split on `\`). Folder names that differ only in Unicode form (`café` typed two ways) are made unique like names that differ only in case, and a ` (2)` suffix no longer makes a long name go past 255 bytes.
+- A backed-up folder with no usable name is restored as `Folder <n>` counting from 1, as the app does (it counted from 0).
+- On Windows, a folder that was hidden when it was backed up (such as a dot folder) is hidden again after the restore, as files already were and as the app does.
+
 ## 0.1.2 (2026-09-28)
 
 Documentation only, no code changes: the README says precisely who wrote this implementation, and suggests keeping a copy of the tool, `SHA256SUMS` and `FORMAT.md` next to your backups.

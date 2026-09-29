@@ -117,30 +117,32 @@ pub fn path_matches(display: &str, prefix: &str) -> bool {
 }
 
 /// Indexes of the entries a restore or listing covers; every prefix must match something.
+/// A prefix that matches nothing is tried with the root names the index records, which
+/// version 0.1.2 and earlier showed (an index written before Backup Base 1.1.4 may record
+/// `ssh` for the folder `.ssh`).
 pub fn select(idx: &Index, names: &HashMap<u32, String>, prefixes: &[String]) -> Result<Vec<usize>> {
     let prefixes: Vec<String> = prefixes.iter().map(|p| normalize_prefix(p)).collect();
     if prefixes.is_empty() {
         return Ok((0..idx.entries.len()).collect());
     }
-    let mut hit = vec![false; prefixes.len()];
-    let mut out = Vec::new();
-    for (i, e) in idx.entries.iter().enumerate() {
-        let d = display_path(names, e);
+    let recorded: HashMap<u32, String> = idx.roots.iter().map(|r| (r.id, r.name.trim().to_string())).collect();
+    let mut picked = vec![false; idx.entries.len()];
+    let mut mark = |names: &HashMap<u32, String>, p: &str| {
         let mut any = false;
-        for (j, p) in prefixes.iter().enumerate() {
-            if path_matches(&d, p) {
-                hit[j] = true;
+        for (i, e) in idx.entries.iter().enumerate() {
+            if path_matches(&display_path(names, e), p) {
+                picked[i] = true;
                 any = true;
             }
         }
-        if any {
-            out.push(i);
+        any
+    };
+    for p in &prefixes {
+        if !mark(names, p) && !mark(&recorded, p) {
+            return Err(Error::new(Kind::NotFound, format!("Nothing in this version matches --path \"{p}\". Run \"backupbase-restore files\" to see the paths.")));
         }
     }
-    if let Some(j) = hit.iter().position(|h| !h) {
-        return Err(Error::new(Kind::NotFound, format!("Nothing in this version matches --path \"{}\". Run \"backupbase-restore files\" to see the paths.", prefixes[j])));
-    }
-    Ok(out)
+    Ok((0..idx.entries.len()).filter(|&i| picked[i]).collect())
 }
 
 /// Progress on stderr, only when it is a terminal.
@@ -496,8 +498,44 @@ pub fn restore(h: &VaultHeader, keys: &Keys, idx: &Index, opts: &Options) -> Res
                 r.rep.problems.push(format!("{}: the folder's permissions could not be set ({}).", display_path(&r.names, e), reason(&err)));
             }
         }
+        // A folder recorded as hidden (attr bit 2, such as a dot folder on Windows) is hidden
+        // again, as files are when they are created and as the app does.
+        #[cfg(windows)]
+        if e.attr.is_some_and(|a| a & 2 != 0) {
+            if let Err(err) = set_hidden(p) {
+                r.rep.problems.push(format!("{}: the folder could not be made hidden ({}).", display_path(&r.names, e), reason(&err)));
+            }
+        }
     }
     Ok(r.rep)
+}
+
+/// Adds FILE_ATTRIBUTE_HIDDEN to a folder (std has no call for a folder's attributes).
+#[cfg(windows)]
+fn set_hidden(path: &Path) -> io::Result<()> {
+    use std::os::windows::ffi::OsStrExt;
+    #[link(name = "kernel32")]
+    extern "system" {
+        fn GetFileAttributesW(name: *const u16) -> u32;
+        fn SetFileAttributesW(name: *const u16, attrs: u32) -> i32;
+    }
+    // The Win32 calls take a path over 260 characters only in its \\?\ form.
+    let mut s = path.as_os_str().to_os_string();
+    let text = path.to_string_lossy();
+    if path.is_absolute() && s.len() > 240 && !text.starts_with(r"\\?\") {
+        s = std::ffi::OsString::from(format!(r"\\?\{}", text.replace('/', "\\")));
+    }
+    let wide: Vec<u16> = s.encode_wide().chain(Some(0)).collect();
+    // SAFETY: `wide` is a NUL-terminated UTF-16 string that outlives both calls.
+    let cur = unsafe { GetFileAttributesW(wide.as_ptr()) };
+    if cur == u32::MAX {
+        return Err(io::Error::last_os_error());
+    }
+    // SAFETY: as above.
+    if unsafe { SetFileAttributesW(wide.as_ptr(), (cur & !0x80) | 0x2) } == 0 {
+        return Err(io::Error::last_os_error());
+    }
+    Ok(())
 }
 
 fn parent_p(p: &str) -> &str {
